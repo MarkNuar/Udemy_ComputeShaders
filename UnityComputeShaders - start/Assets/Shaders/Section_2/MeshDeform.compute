@@ -1,0 +1,30 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct Vertex
+{
+    float3 position;
+    float3 normal;
+};
+
+RWStructuredBuffer<Vertex> vertexBuffer;
+StructuredBuffer<Vertex> initialBuffer; // read only by the shader 
+
+float delta;
+float radius;
+
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float3 initialPos = initialBuffer[id.x].position; 
+    float3 s = float3(normalize(initialPos) * radius * 0.01); // 0.01 since cube is scaled by 100
+    float3 pos = lerp(initialPos, s, delta);
+
+    float3 initialNormal = initialBuffer[id.x].normal;
+    float3 snormal = normalize(initialPos); // surface normal in case of the sphere is just the position normalized
+    float3 norm = lerp(initialNormal, snormal, delta); // lerp according to delta value 
+
+    vertexBuffer[id.x].normal = norm;
+    vertexBuffer[id.x].position = pos;
+}

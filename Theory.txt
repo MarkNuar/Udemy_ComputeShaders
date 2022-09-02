@@ -1,0 +1,72 @@
+- Compute Shader:
+    Contains one or more Kernels 
+    Kernels can be called from a MonoBehavior scripts using a Dispatch method 
+    All Kernels need a #pagma kernel [name]
+
+- Dispatch: 
+    Dispatch(kernelIndex, X, Y, Z);
+        This way we dispatch X*Y*Z groups (works): 
+            X along the horizontal direction 
+            Y along the vertical direction 
+            Z along the depth direction 
+        Each group is identified by a GroupID, whose values range from (0,0,0) to (X-1, Y-1, Z-1).
+        Each group contains 1 ore more threads, as defined in the numthreads header 
+
+        numthreads(x,y,z) means that each group contains 8 threads in the x dimension, 8 in the y, and 1 in the z dimension.
+        Each thread is identified by a ThreadId, whose values range from (0,0,0) to (x-1,y-1,z-1) (different from the XYZ in the GroupID!)
+
+        Finally, the DispatchThreadID is computed in the following way: 
+            DispatchThreadID = GroupID * (x,y,z) + ThreadId;
+
+- Index in threads: 
+        [numthreads(8,8,1)] // 64 threads = 8 * 8 * 1
+        void CSMain (uint3 id : SV_DispatchThreadID)
+
+    id is the index in the 3 dimensional matrix of dimension 8x8x1
+    Each dimension has index starting form 0 
+        x : 0 - 7
+        y : 0 - 7
+        z : 0 (only one in the previous definition)
+    
+    0,0,0 corresponds to the lower left corner 
+    1,0,0 is the one in the right of the first 
+    0,1,0 is the one on top of the first
+
+- Step function:
+    step(edge, x) -> 1 if x>=edge, 0 otherwise
+
+- Pass data to the Shader 
+    SetInt 
+    SetVector (float4)
+    SetTexture (RW texture) 
+    Buffers 
+
+- Buffers: 
+    Buffer of: 
+        float 
+        float3 
+        float4 
+        custom structs !!
+    
+    StructuredBuffer is only write 
+    RWStructuredBuffer is also read 
+    
+    Steps to create a buffer: 
+        Setup a custom struct (or base data)
+        Create a CPU based array of struct 
+        Create a GPU block of memory to pass these value to 
+        Populate the GPU memory using the CPU array (buffer.SetData(array))
+        If needed, fetch the data from the buffer (buffer.GetData(array)) 
+
+    You can also use buffers to pass data from Shader (GPU) to C# code (CPU) (like producing the positions of the stars)
+
+
+- Frac function: 
+    frac(23.546) = 0.564 -> always a value between 0 and 1 
+
+- Perlin Noise, invented by Ken Perlin for film Tron 
+
+- Smoothstep(min, max, x)
+    0 if x < min 
+    1 if x > max 
+    value between smoothed 

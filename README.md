@@ -1,1 +1,2 @@
-# Udemy_ComputeShaders
+# UnityComputeShaders
+Resources from my Udemy course
