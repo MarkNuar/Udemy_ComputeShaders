@@ -70,3 +70,19 @@
     0 if x < min 
     1 if x > max 
     value between smoothed 
+
+- Out vs Ref: 
+    Out param will be initialized inside the function 
+    Ref param is already initialized before the call and can be read and written inside the function 
+
+- Post Processing 
+    Apply effect on an image, by passing it to the GPU 
+    Src Texture (only read from GPU)
+    Dest Texture (rw from GPU)
+
+- Blur Effect: 
+    Each pixel is a blend between itself and the pixels around -> not exatly, this would be very inefficient (consireding a square of 10 pixels per side, we would perform
+    10*10 operations per pixel)
+    Instead, first we blur horizontally, then vertically -> 10 + 10 = 20 operations per pixel, much better!
+
+    This is a 2 stage process -> 2 kernels 

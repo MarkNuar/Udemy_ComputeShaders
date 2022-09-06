@@ -15,19 +15,30 @@ public class BlurHighlight : BaseCompletePP
     public float shade = 0.5f;
     public Transform trackedObject;
 
-    Vector4 center;
+    Vector4 _center;
+
+    private RenderTexture horzOutput = null;
+    private int kernelHorzPassID;
 
     protected override void Init()
     {
-        center = new Vector4();
+        _center = new Vector4();
         kernelName = "Highlight";
         base.Init();
 
+        kernelHorzPassID = shader.FindKernel("HorzPass");
     }
 
     protected override void CreateTextures()
     {
         base.CreateTextures();
+
+        shader.SetTexture(kernelHorzPassID, "source", renderedSource); 
+        
+        CreateTexture(ref horzOutput);
+        
+        shader.SetTexture(kernelHorzPassID, "horzOutput", horzOutput);
+        shader.SetTexture(kernelHandle, "horzOutput", horzOutput);
     }
 
     private void OnValidate()
@@ -44,6 +55,9 @@ public class BlurHighlight : BaseCompletePP
         shader.SetFloat("radius", rad);
         shader.SetFloat("edgeWidth", rad * softenEdge / 100.0f);
         shader.SetFloat("shade", shade);
+        shader.SetInt("blurRadius", blurRadius);
+        shader.SetInt("width", renderedSource.width);
+        shader.SetInt("height", renderedSource.height);
     }
 
     protected override void DispatchWithSource(ref RenderTexture source, ref RenderTexture destination)
@@ -52,6 +66,7 @@ public class BlurHighlight : BaseCompletePP
 
         Graphics.Blit(source, renderedSource);
 
+        shader.Dispatch(kernelHorzPassID, groupSize.x, groupSize.y, 1);
         shader.Dispatch(kernelHandle, groupSize.x, groupSize.y, 1);
 
         Graphics.Blit(output, destination);
@@ -68,9 +83,9 @@ public class BlurHighlight : BaseCompletePP
             if (trackedObject && thisCamera)
             {
                 Vector3 pos = thisCamera.WorldToScreenPoint(trackedObject.position);
-                center.x = pos.x;
-                center.y = pos.y;
-                shader.SetVector("center", center);
+                _center.x = pos.x;
+                _center.y = pos.y;
+                shader.SetVector("center", _center);
             }
             bool resChange = false;
             CheckResolution(out resChange);

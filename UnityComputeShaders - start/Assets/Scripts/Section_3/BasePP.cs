@@ -10,7 +10,7 @@ public class BasePP : MonoBehaviour
     protected string kernelName = "CSMain";
 
     protected Vector2Int texSize = new Vector2Int(0,0);
-    protected Vector2Int groupSize = new Vector2Int();
+    protected Vector2Int groupSize = new Vector2Int(); // for the dispatch method
     protected Camera thisCamera;
 
     protected RenderTexture output = null;
@@ -73,9 +73,28 @@ public class BasePP : MonoBehaviour
 
     protected virtual void CreateTextures()
     {
+        // the textures will have the size of the camera 
+        texSize.x = thisCamera.pixelWidth;
+        texSize.y = thisCamera.pixelHeight;
+
+        if (shader)
+        {
+            uint x, y;
+            // get kernel group size (dimensions of the single group), numthreads
+            shader.GetKernelThreadGroupSizes(kernelHandle, out x, out y, out _); // by using out we pass by reference
+            // get the group count for the dispatch method by dividing the textures H and W by the size of the single group
+            groupSize.x = Mathf.CeilToInt((float)texSize.x / (float)x);
+            groupSize.y = Mathf.CeilToInt((float)texSize.y / (float)y);
+        }
         
+        CreateTexture(ref output);
+        CreateTexture(ref renderedSource);
+        
+        shader.SetTexture(kernelHandle, "source", renderedSource);
+        shader.SetTexture(kernelHandle, "output", output);
     }
 
+    // use in edit mode!
     protected virtual void OnEnable()
     {
         Init();
@@ -95,20 +114,36 @@ public class BasePP : MonoBehaviour
 
     protected virtual void DispatchWithSource(ref RenderTexture source, ref RenderTexture destination)
     {
+        // copy the source into the compute shader texture renderedSource
+        Graphics.Blit(source, renderedSource);
         
+        shader.Dispatch(kernelHandle, groupSize.x, groupSize.y, 1);
+        
+        // copy the output of the compute shader into the destination render texture (so on camera)
+        Graphics.Blit(output, destination);
     }
 
     protected void CheckResolution(out bool resChange )
     {
         resChange = false;
-    }
 
+        if (texSize.x == thisCamera.pixelWidth && texSize.y == thisCamera.pixelHeight) return;
+        
+        resChange = true;
+        // regenerate the textures
+        CreateTextures();
+    }
+    
+    // Standard Monobehavior callback
+    // Blit copies the source to the destination
     protected virtual void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
+        // if not initialized or non shader, simply blit source into dest
         if (!init || shader == null)
         {
             Graphics.Blit(source, destination);
         }
+        // if shader ready, apply it to source
         else
         {
             CheckResolution(out _);

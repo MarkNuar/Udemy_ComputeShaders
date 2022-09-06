@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
+[ExecuteInEditMode] // let us call OnRenderImage in edit mode
 public class RingHighlight : BasePP
 {
     [Range(0.0f, 100.0f)]
@@ -13,6 +13,8 @@ public class RingHighlight : BasePP
     public float shade;
     public Transform trackedObject;
 
+    private Vector4 _center;
+    
     protected override void Init()
     {
         kernelName = "Highlight";
@@ -43,7 +45,17 @@ public class RingHighlight : BasePP
         }
         else
         {
-            CheckResolution(out _);
+            if (trackedObject && thisCamera)
+            {
+                Vector3 pos = thisCamera.WorldToScreenPoint(trackedObject.position);
+                _center.x = pos.x;
+                _center.y = pos.y;
+                shader.SetVector("center", _center);
+            }
+
+            bool resChange = false;
+            CheckResolution(out resChange);
+            if(resChange) SetProperties();
             DispatchWithSource(ref source, ref destination);
         }
     }
