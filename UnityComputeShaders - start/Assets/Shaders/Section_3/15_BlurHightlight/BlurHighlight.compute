@@ -42,8 +42,26 @@ void HorzPass(uint3 id : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 void Highlight(uint3 id : SV_DispatchThreadID)
 {
-    float4 color = horzOutput[id.xy];
+    int top = max(0, (int) id.y - blurRadius);
+    int count = min(blurRadius, (int) id.y) + min(blurRadius, height - (int) id.y);
+    float4 blurColor = 0;
 
+    uint2 index = uint2(id.x, (uint)top);
+
+    [unroll(100)] // unrolls the loop in steps of 100 iterations, best performance
+    for(int y = 0; y < count; y++)
+    {
+        blurColor += horzOutput[index];
+        index.y ++;
+    }
+
+    blurColor /= (float)count;
+    
+    float4 srcColor = source[id.xy];
+    float4 shadedColor = blurColor * shade;
+    float highLight = inCircle((float2)id.xy, center.xy, radius, edgeWidth);
+    float4 color = lerp(shadedColor, srcColor, highLight);
+    
     output[id.xy] = color;
 
 }

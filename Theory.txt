@@ -86,3 +86,24 @@
     Instead, first we blur horizontally, then vertically -> 10 + 10 = 20 operations per pixel, much better!
 
     This is a 2 stage process -> 2 kernels 
+
+- Coordinate systems: 
+    In a texture: 
+        (0,0) in the left bottom part 
+        source.Length.xy in the right top part 
+    
+- fmod(x,y): 
+    Returns the rest of the division between x and y 
+    fmod(13,3) = 1 (rest of division of 13 by 3)
+
+- Vertex Shader:
+    VS converts into HDC (homogenous device coordinates)
+        Front face bottom left (-1,-1,1)
+        Back face top right (1,1,-1)
+    VS operates on vertices: pos, uv, color, normal 
+
+- Fragment Shader:
+    Returns the color value for each pixel
+    The values at the pixel are obtained by interpolation between vertices values
+    Triangles are drawn if clockwise 
+    
