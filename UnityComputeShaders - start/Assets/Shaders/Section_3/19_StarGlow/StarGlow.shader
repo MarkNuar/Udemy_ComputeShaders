@@ -105,7 +105,9 @@
         // STEP 3
         Pass
         {
-            // destination = source * srcFactor + destination * destFactor 
+            // destination = source * srcFactor + destination * destFactor
+            // OneMinusDstColor srcFactor 
+            // this prevents going out the range 0 - 1 of color values 
             Blend OneMinusDstColor One 
             
             CGPROGRAM

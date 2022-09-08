@@ -106,4 +106,21 @@
     Returns the color value for each pixel
     The values at the pixel are obtained by interpolation between vertices values
     Triangles are drawn if clockwise 
-    
+
+- Custom Particle Effect 
+    With particle effect we can instantiate 10000 of instances of low poly meshes
+    We can obtain this effect by sharing a buffer between a Computer Shader and a (Vertex Fragment) Shader
+
+- DrawProceduralNow(MeshTopology topology, int vertexCount, int instanceCount)
+    topology: the type of topology to be drawn (point, triangle, quadrs, lines, line strips)
+    vertexCount: the amount of vertices for each instance 
+    instanceCount: number of instances
+
+- Flocking: 
+    Member of the flock are called Boids (bird-oids objects)
+    Scan the other Boids in a defined radius, then use these 3 rules to update the position and direction:
+        Separation: steer to avoid crowding other local boids 
+        Alignment: steer towards the average heading of local boids 
+        Cohesion: steer towards the average position of local boids  
+
+- Slerp : spehrical linear interpolation 

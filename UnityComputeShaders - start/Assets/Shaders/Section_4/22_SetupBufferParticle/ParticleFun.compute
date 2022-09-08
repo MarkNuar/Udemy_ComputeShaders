@@ -1,5 +1,12 @@
 ﻿#pragma kernel CSParticle
 
+struct Particle
+{
+	float3 position;
+	float3 velocity;
+	float life;
+};
+RWStructuredBuffer<Particle> particleBuffer; // only read buffer for the shader
 
 // Variables set from the CPU 
 float deltaTime;
@@ -7,6 +14,7 @@ float2 mousePosition;
 
 uint rng_state;
 
+// fast random function 
 uint rand_xorshift()
 {
 	// Xorshift algorithm from George Marsaglia's paper
@@ -25,14 +33,26 @@ void respawn(uint id)
 	float f2 = float(rand_xorshift()) * tmp - 0.5;
 	float3 normalF3 = normalize(float3(f0, f1, f2)) * 0.8f;
 	normalF3 *= float(rand_xorshift()) * tmp;
-	/*particleBuffer[id].position = float3(normalF3.x + mousePosition.x, normalF3.y + mousePosition.y, normalF3.z + 3.0);
+	particleBuffer[id].position = float3(normalF3.x + mousePosition.x, normalF3.y + mousePosition.y, normalF3.z + 3.0);
 	// reset the life of this particle
 	particleBuffer[id].life = 4;
-	particleBuffer[id].velocity = float3(0,0,0);*/
+	particleBuffer[id].velocity = float3(0,0,0);
 }
 
 [numthreads(256, 1, 1)]
 void CSParticle(uint3 id : SV_DispatchThreadID)
 {
-	
+	Particle currParticle = particleBuffer[id.x];
+
+	currParticle.life -= deltaTime;
+
+	float3 delta = float3(mousePosition.xy, 3) - currParticle.position;
+	float3 dir = normalize(delta);
+
+	currParticle.velocity += dir;
+	currParticle.position += currParticle.velocity * deltaTime;
+
+	particleBuffer[id.x] = currParticle;
+
+	if(currParticle.life < 0) respawn(id.x);
 }

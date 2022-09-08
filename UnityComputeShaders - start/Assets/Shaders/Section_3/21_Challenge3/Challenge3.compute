@@ -9,12 +9,25 @@ float edgeWidth;
 float4 tintColor;
 float tintStrength;
 
+// simple function that computes if a point is on the bottom of the screen
+float onBottom(float x, float line_width, float edge_witdh)
+{
+    return smoothstep(x-line_width-edge_witdh, x-line_width, 0);
+}
+
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
     float4 srcColor = source[id.xy];
-    float4 color = srcColor;
 
+    float bottom = onBottom(id.y, tintHeight, edgeWidth);
+
+    // first grayscales, then multiply by the thint color
+    float4 tintedColor = (srcColor.r + srcColor.g + srcColor.b) * 0.33 * tintColor;
+    // now choose from source or tinted, according to tint strenght, and the shade
+    float4 bottomColor = lerp(srcColor, tintedColor, tintStrength) * (1-shade);
+    // now discretize between top and bottom portion of the screen 
+    float4 color = lerp(srcColor, bottomColor, bottom);
+    
     output[id.xy] = color;
-
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using UnityEngine;
 
 public class InstancedFlocking : MonoBehaviour
@@ -78,7 +79,13 @@ public class InstancedFlocking : MonoBehaviour
         boidsBuffer.SetData(boidsArray);
 
         //Initialize args buffer
-
+        argsBuffer = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
+        if (boidMesh != null)
+        {
+            args[0] = (uint)boidMesh.GetIndexCount(0);
+            args[1] = (uint)numOfBoids;
+        }
+        argsBuffer.SetData(args);
 
         shader.SetBuffer(this.kernelHandle, "boidsBuffer", boidsBuffer);
         shader.SetFloat("rotationSpeed", rotationSpeed);
@@ -98,7 +105,14 @@ public class InstancedFlocking : MonoBehaviour
 
         shader.Dispatch(this.kernelHandle, groupSizeX, 1, 1);
 
+        // boidMesh = mesh we are instancing 
+        // submeshIndex = 0, single mesh in our model 
+        // boidMaterial = material of the mesh 
+        // boinds = bounding volumes around the instance 
+        // argsBuffer = defines the vertex and instance count
         Graphics.DrawMeshInstancedIndirect(boidMesh, 0, boidMaterial, bounds, argsBuffer, 0);
+        
+        boidsBuffer.GetData(boidsArray);
     }
 
     void OnDestroy()
