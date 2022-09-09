@@ -124,3 +124,91 @@
         Cohesion: steer towards the average position of local boids  
 
 - Slerp : spehrical linear interpolation 
+
+- Theory of a Physics Engine: 
+    Particle: single ball
+    Rigidbody: lattice of particles 
+
+    Motion of a rigidbody: 
+        Translation: 
+            Movement with respect to the center of mass of the rigibody  
+                - F = dP/dt = m*dv/dt = m*a                           
+                    float3 linearMomentum (dP) += F * deltaTime (dt)
+
+                - v = P/M 
+                    body.velocity = linearMomentum/mass
+
+                - v = dx/dt 
+                    body.position += body.velocity * deltaTime
+
+        Rotation
+            Rotation around a point 
+                - dL/dt = r x F (r is the relative position) 
+                    float3 angularMomentum = cross(relativePosition, force) * deltaTime 
+
+                - w = I^-1 L (where I is the friction matrix)
+                    But we consider an identity matrix, since no friction 
+                    So 
+                    w = L
+                    float3 angularVelocity = angularMomentum;
+
+                - Quaternion is a vector4 
+                    q = [x,y,z,w]
+                    dq = a*sin(theta/2), cos(theta/2)
+
+                    float3 axis = normalize(angularVelocity)
+                    float theta = length(angularVelocity * deltaTime)
+                    float4 dq = float4(axis*sin(theta/2), cos(theta/2))
+
+                - q(t + dt) = dq x d(t) quaternion at next time step 
+                    body.quaternion = cross(dq, body.quaternion)
+
+    Collision:
+        Lienar Spring: repulsive force 
+        Dashpot: reduce enery between particles when they collide 
+        Shear Force: shearing when colling 
+
+            Linear Spring Force: 
+                k = spring coefficient 
+                d = particle diameter 
+                ri,j = relative position of particle i to particle j
+                fi,s = -k(d - abs(ri,j)) * ri,j / abs(ri,j)
+                    float3 relativePosition = particleI.position - particleJ.position
+                    float rpMag = length(relativePosition)
+                    float linearForce = - springCoefficient * (particleDiameter - rpMag) * normalize(relativePosition)
+
+            Damping Force: 
+                n = damping coefficient 
+                vij = relative velocity to particle I to particle J 
+                fid = n vij 
+                    float3 relativeVelocity = particleI.velocity - particleJ.velocity;
+                    float dampingForce ì dampingCoefficient ( relativeVelocity)
+
+            Shear Force
+                fij,t = kt * vijt    (tangential coefficient * tangential velocity)
+                    tangetial velocity computed from relative velocity and relative position
+                    ...
+
+            Combining the forces: 
+                 Fp = spring + damping + shear 
+
+        Linear Force of a Rigidbody = Sum of all the forces in each particle 
+
+        Angular Force of a RigidBody = Sum of all the cross products between point of application (particle position) and force 
+
+    Collision Checking: 
+        Every particle checked against every other particles -> BAD 
+
+        Divide the space in grid, and check only the particles inside the grid -> grid has cubes of side = particle diameter -> At max 8 particles 
+        We need to check the 27 adjacent grids position around the current one -> now the collision detection is O(n) complexity, instead of O(n^2)
+
+- Navier Stokes Equations: fluid simulation 
+
+    u vector = vector of velocity in each direction (xyz)
+    - Mass is conserved 
+        -> gradient of u vector is 0 -> there is no creation or loss of mass 
+    - Momentum is conserved 
+        -> rho (density) * derivative of u = -nabla pressure + viscosity + density * Force 
+            mass * acceleration = F = (dP/dx, dP/dy, dP/dz) + .... + force 
+
+    For game dev we simplify it by reducing fluid from continous to discrete (grid divided velocity)
